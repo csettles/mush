@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		841E08E32050645D008E0974 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 841E08E22050645D008E0974 /* main.c */; };
+		841E08E32050645D008E0974 /* mush.c in Sources */ = {isa = PBXBuildFile; fileRef = 841E08E22050645D008E0974 /* mush.c */; };
+		841E08EF205065E1008E0974 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 841E08E9205065E0008E0974 /* Makefile */; };
+		841E08F0205065E1008E0974 /* parseline.c in Sources */ = {isa = PBXBuildFile; fileRef = 841E08EC205065E0008E0974 /* parseline.c */; };
+		841E08F1205065E1008E0974 /* checker.c in Sources */ = {isa = PBXBuildFile; fileRef = 841E08ED205065E0008E0974 /* checker.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +27,14 @@
 
 /* Begin PBXFileReference section */
 		841E08DF2050645D008E0974 /* asgn6 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = asgn6; sourceTree = BUILT_PRODUCTS_DIR; };
-		841E08E22050645D008E0974 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		841E08E22050645D008E0974 /* mush.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = mush.c; sourceTree = "<group>"; };
+		841E08E9205065E0008E0974 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		841E08EA205065E0008E0974 /* parseline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parseline.h; sourceTree = "<group>"; };
+		841E08EB205065E0008E0974 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		841E08EC205065E0008E0974 /* parseline.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = parseline.c; sourceTree = "<group>"; };
+		841E08ED205065E0008E0974 /* checker.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = checker.c; sourceTree = "<group>"; };
+		841E08EE205065E0008E0974 /* checker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = checker.h; sourceTree = "<group>"; };
+		841E08F220506609008E0974 /* mush.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mush.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +67,14 @@
 		841E08E12050645D008E0974 /* asgn6 */ = {
 			isa = PBXGroup;
 			children = (
-				841E08E22050645D008E0974 /* main.c */,
+				841E08E9205065E0008E0974 /* Makefile */,
+				841E08EB205065E0008E0974 /* README */,
+				841E08E22050645D008E0974 /* mush.c */,
+				841E08F220506609008E0974 /* mush.h */,
+				841E08ED205065E0008E0974 /* checker.c */,
+				841E08EE205065E0008E0974 /* checker.h */,
+				841E08EC205065E0008E0974 /* parseline.c */,
+				841E08EA205065E0008E0974 /* parseline.h */,
 			);
 			path = asgn6;
 			sourceTree = "<group>";
@@ -119,7 +136,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				841E08E32050645D008E0974 /* main.c in Sources */,
+				841E08EF205065E1008E0974 /* Makefile in Sources */,
+				841E08E32050645D008E0974 /* mush.c in Sources */,
+				841E08F0205065E1008E0974 /* parseline.c in Sources */,
+				841E08F1205065E1008E0974 /* checker.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
