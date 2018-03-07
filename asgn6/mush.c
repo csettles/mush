@@ -17,7 +17,28 @@ int main(int argc, const char * argv[]) {
 	} else {
 		s = show_prompt();
 		while (s) {
-			/* fork and exec processes */
+			/* do stuff */
+			return 0;
 		}
 	}
+}
+
+stage *show_prompt(void) {
+	char line[LINE_MAX + 2];
+	int str_len;
+	stage *s;
+	
+	printf("mush%% ");
+	fgets(line, LINE_MAX + 2, stdin);
+	
+	str_len = (int)strlen(line);
+	if (str_len > LINE_MAX) {
+		/* here we need to consume rest of line if it is too long */
+		fprintf(stderr, "command too long\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	s = build_stages(line);
+	
+	return s;
 }

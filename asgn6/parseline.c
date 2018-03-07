@@ -6,32 +6,7 @@
  Copyright © 2018 Caitlin Settles. All rights reserved.
  **/
 
-#include "checker.h"
 #include "parseline.h"
-
-stage *show_prompt(void) {
-	char line[LINE_MAX + 2];
-	int str_len;
-	stage *s;
-	
-	printf("mush%% ");
-	fgets(line, LINE_MAX + 2, stdin);
-	
-	str_len = (int)strlen(line);
-	if (str_len > LINE_MAX) {
-		/* here we need to consume rest of line if it is too long */
-		fprintf(stderr, "command too long\n");
-		exit(EXIT_FAILURE);
-	}
-	
-	s = build_stages(line);
-	
-	/* checks for any errors, will exit if any found */
-	
-	print_stages(*s);
-	
-	return s;
-}
 
 /**
  Splits a line of input into "stages" based on piping. Each chunk of input

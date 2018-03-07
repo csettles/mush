@@ -1,5 +1,4 @@
 #include "checker.h"
-#include "parseline.h"
 
 /* Will take in the array of arguments and do stuff with it */
 

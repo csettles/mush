@@ -10,6 +10,8 @@
 #define mush_h
 
 #include <unistd.h>
-#include "parseline.c"
+#include "checker.h"
+
+stage *show_prompt(void);
 
 #endif /* mush_h */
