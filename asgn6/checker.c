@@ -1,7 +1,5 @@
 #include "checker.h"
 
-/* Will take in the array of arguments and do stuff with it */
-
 /**
  Creates a new stage pointer.
 
@@ -176,16 +174,13 @@ void handle_args(stage *s, char *input, int stage_max) {
 /**
  Builds a linked list of stages from a line of input.
 
- @param line a string of input
+ @param stages each stage represented as a string
+ @param len the number of stages in the line
  @return stages in the input as represented by structs
  */
-stage *build_stages(char *line) {
-	int i, len;
-	char stages[STAGE_MAX][LINE_MAX];
+stage *build_stages(char stages[STAGE_MAX][LINE_MAX], int len) {
+	int i;
 	stage *s, *temp;
-	
-	len = split_line(line, stages);
-	clean_line(line, stages, len);
 	
 	s = new_stage(0);
 	handle_stage(s, stages[0], len - 1);
@@ -198,6 +193,20 @@ stage *build_stages(char *line) {
 	}
 	
 	return s;
+}
+
+/**
+ Gets the number of stages in a pipeline.
+
+ @param s the head of the list of stages
+ @return the number of stages in the pipeline
+ */
+int num_stages(stage *s) {
+	if (s == NULL) {
+		return 0;
+	}
+	
+	return 1 + num_stages(s->next);
 }
 
 /**

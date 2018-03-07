@@ -21,7 +21,8 @@ void handle_args(stage *s, char *input, int stage_max);
 
 stage *new_stage(int number);
 stage new_stage_s(int number);
-stage *build_stages(char *line);
+stage *build_stages(char stages[STAGE_MAX][LINE_MAX], int len);
+int num_stages(stage *s);
 void print_stage(stage s);
 void print_stages(stage head);
 
