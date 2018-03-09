@@ -56,9 +56,9 @@ void clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
 	memcpy(line_copy, line, strlen(line) + 1);
 	temp = strtok(line_copy, "|");
 	
-	if (temp != NULL &&
+	if (strstr(line, "|") &&
 	    (strstr(line, "cd ") - line == 0 || strstr(line, " cd "))) {
-		fprintf(stderr, "changing directory in pipeline\n");
+		fprintf(stderr, "tried to change directory in pipeline\n");
 		exit(EXIT_FAILURE);
 	}
 	

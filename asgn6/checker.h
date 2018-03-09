@@ -9,7 +9,7 @@ struct stage {
 	char input[FILE_LEN], output[FILE_LEN];
 	char command[CMD_LEN];
 	char line[LINE_MAX];
-	char args[ARG_MAX][ARG_LEN]; /* list of null terminated arguments */
+	char args[ARG_MAX + 1][ARG_LEN]; /* list of null terminated arguments */
 	stage *next;
 };
 

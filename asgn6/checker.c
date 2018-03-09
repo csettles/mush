@@ -38,15 +38,15 @@ stage new_stage_s(int number) {
  @param stage_max the index of the last stage
  */
 void handle_stage(stage *s, char *input, int stage_max) {
-	int last_index;
+//	int last_index;
 	
-	last_index = (int)strlen(input) - 1;
-	if (input[last_index] == '\n') {
-		input[last_index] = '\0';
-		last_index--;
-	}
+//	last_index = (int)strlen(input) - 1;
+//	if (input[last_index] == '\n') {
+//		input[last_index] = '\0';
+//		last_index--;
+//	}
 
-	if (last_index + 1 == 0 || all_space(input)) {
+	if (strlen(input) == 0 || all_space(input)) {
 		fprintf(stderr, "invalid null command\n");
 		exit(EXIT_FAILURE);
 	}
@@ -162,6 +162,7 @@ void handle_args(stage *s, char *input, int stage_max) {
 		len++;
 		token = strtok(NULL, " ");
 	}
+	*s->args[len] = (char)NULL;
 	
 	if (len == ARG_MAX && token != NULL) {
 		fprintf(stderr, "too many arguments\n");

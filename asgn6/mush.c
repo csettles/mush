@@ -27,6 +27,7 @@ int main(int argc, const char * argv[]) {
 	} else {
 		while (1) {
 			/* only way to drop out of this loop is ^D */
+			
 			prompt(line);
 			if ((s = get_stages(line)) == NULL) {
 				/* directory was changed */
@@ -35,31 +36,50 @@ int main(int argc, const char * argv[]) {
 			
 			num_pipes = num_stages(s) - 1;
 			for (i = 0; i < num_pipes; i++) {
-				if (pipe(fds + i * 2) < 0) {
+				if (pipe(fds + i * 2)) {
 					perror("mush");
 					exit(EXIT_FAILURE);
 				}
 			}
 			
 			while (s) {
-				/* do stuff */
-				if ((child = fork()) == 0) {
+				if (fork() == 0) {
 					sigprocmask(SIG_SETMASK, &old, NULL);
-					exec_command(fds, s->num, s);
-				} else {
-					waitpid(child, NULL, 0);
+					exec_command(fds, num_pipes, s);
 				}
-				/* fork */
+				
 				fflush(stdout);
-				return 0;
+				s = s->next;
+			}
+			
+			for (i = 0; i < num_pipes * 2; i++) {
+				/* close all open files so processes don't hang */
+				close(fds[i]);
+			}
+			
+			for (i = 0; i < num_pipes + 1; i++) {
+				child = wait(NULL);
+				printf("child %d exited\n", child);
 			}
 		}
+		return 0;
 	}
 }
 
 void prompt(char *line) {
-	printf("mush%% ");
-	fgets(line, LINE_MAX + 2, stdin); /* check feof here */
+	int ind;
+	
+	printf("mush>\t");
+	fgets(line, LINE_MAX + 2, stdin);
+	if (feof(stdin)) {
+		printf("\n");
+		exit(0);
+	}
+	
+	ind = (int)strlen(line) - 1;
+	if (line[ind] == '\n') {
+		line[ind] = '\0';
+	}
 }
 
 stage *get_stages(char *line) {
@@ -81,7 +101,14 @@ stage *get_stages(char *line) {
 	if (strstr(line, "cd") != NULL) {
 		/* not tested yet */
 		dir = strtok(line, " ");
-		chdir(dir + 1);
+		dir = strtok(NULL, " ");
+		if (all_space(dir)) {
+			fprintf(stderr, "need a directory, dummy\n");
+			return NULL;
+		}
+		if (chdir(dir)) {
+			perror(dir);
+		}
 		return NULL;
 	}
 	
@@ -90,15 +117,31 @@ stage *get_stages(char *line) {
 	return s;
 }
 
-void exec_command(int fds[20], int ind, stage *s) {
-	printf("process %d", ind);
+void exec_command(int fds[20], int ind_max, stage *s) {
+	char **args;
+	int i;
 	
-	if (strcmp(s->input, "original stdin") == 0) {
-		/* stdin */
-		dup2(<#int#>, <#int#>);
-	} else if (strstr(s->input, "pipe from stage")) {
-		/* pipe from ind - 1 */
-	} else {
-		/* file */
+	if (ind_max > 0) {
+		if (s->num == 0) {
+			dup2(fds[1], 1); /* stdout */
+		} else if (s->num == ind_max) {
+			dup2(fds[s->num * 2 - 2], 0); /* stdin */
+		} else {
+			dup2(fds[s->num * 2 - 2], 0); /* stdin */
+			dup2(fds[s->num * 2 + 1], 1); /* stdout */
+		}
 	}
+	
+	for (i = 0; i < ind_max * 2; i++) {
+		close(fds[i]);
+	}
+	
+	args = malloc(sizeof(char *) * (s->argc + 1));
+	for (i = 0; i < s->argc; i++) {
+		args[i] = malloc(sizeof(char) * strlen(s->args[i]));
+		strcpy(args[i], s->args[i]);
+	}
+	args[s->argc] = NULL;
+	
+	execvp(s->args[0], args);
 }
