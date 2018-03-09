@@ -30,7 +30,7 @@ int main(int argc, const char * argv[]) {
 			
 			prompt(line);
 			if ((s = get_stages(line)) == NULL) {
-				/* directory was changed */
+				/* error occurred or directory was changed */
 				continue;
 			}
 			
@@ -43,9 +43,12 @@ int main(int argc, const char * argv[]) {
 			}
 			
 			while (s) {
-				if (fork() == 0) {
+				if ((child = fork()) == 0) {
 					sigprocmask(SIG_SETMASK, &old, NULL);
 					exec_command(fds, num_pipes, s);
+				} else if (child < 0) {
+					perror("mush");
+					exit(EXIT_FAILURE);
 				}
 				
 				fflush(stdout);
@@ -53,11 +56,13 @@ int main(int argc, const char * argv[]) {
 			}
 			
 			for (i = 0; i < num_pipes * 2; i++) {
-				/* close all open files so processes don't hang */
+				/* close open pipes so processes don't hang */
 				close(fds[i]);
 			}
 			
 			for (i = 0; i < num_pipes + 1; i++) {
+				/* TODO: check return status of child and
+				 stop all pipes if one command fails */
 				child = wait(NULL);
 				printf("child %d exited\n", child);
 			}
@@ -86,24 +91,28 @@ stage *get_stages(char *line) {
 	int str_len, stage_len;
 	char *dir;
 	char stages[STAGE_MAX][LINE_MAX];
-	stage *s;
 	
 	str_len = (int)strlen(line);
 	if (str_len > LINE_MAX) {
-		/* here we need to consume rest of line if it is too long */
+		/* TODO: consume rest of line if it is too long */
 		fprintf(stderr, "command too long\n");
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 	
 	stage_len = split_line(line, stages);
-	clean_line(line, stages, stage_len);
+	if (stage_len < 0) {
+		return NULL;
+	}
+	
+	if (clean_line(line, stages, stage_len) == 1) {
+		return NULL;
+	}
 	
 	if (strstr(line, "cd") != NULL) {
-		/* not tested yet */
 		dir = strtok(line, " ");
 		dir = strtok(NULL, " ");
 		if (all_space(dir)) {
-			fprintf(stderr, "need a directory, dummy\n");
+			fprintf(stderr, "destination required\n");
 			return NULL;
 		}
 		if (chdir(dir)) {
@@ -112,23 +121,55 @@ stage *get_stages(char *line) {
 		return NULL;
 	}
 	
-	s = build_stages(stages, stage_len);
-	
-	return s;
+	return build_stages(stages, stage_len);;
 }
 
 void exec_command(int fds[20], int ind_max, stage *s) {
 	char **args;
-	int i;
+	int i, tmp_in, tmp_out;
 	
 	if (ind_max > 0) {
 		if (s->num == 0) {
-			dup2(fds[1], 1); /* stdout */
+			dup2(fds[1], STDOUT_FILENO);
+			if (strcmp(s->input, "original stdin") != 0) {
+				if ((tmp_in = open(s->input, O_RDONLY)) < 0) {
+					perror(s->input);
+					exit(EXIT_FAILURE);
+				}
+				dup2(tmp_in, STDIN_FILENO);
+			}
 		} else if (s->num == ind_max) {
-			dup2(fds[s->num * 2 - 2], 0); /* stdin */
+			dup2(fds[s->num * 2 - 2], STDIN_FILENO);
+			if (strcmp(s->output, "original stdout") != 0) {
+				if ((tmp_out = open(s->output,
+						    O_WRONLY | O_CREAT | O_TRUNC,
+						    0666)) < 0) {
+					perror(s->output);
+					exit(EXIT_FAILURE);
+				}
+				dup2(tmp_out, STDOUT_FILENO);
+			}
 		} else {
-			dup2(fds[s->num * 2 - 2], 0); /* stdin */
-			dup2(fds[s->num * 2 + 1], 1); /* stdout */
+			dup2(fds[s->num * 2 - 2], STDIN_FILENO);
+			dup2(fds[s->num * 2 + 1], STDOUT_FILENO);
+		}
+	} else {
+		if (strcmp(s->input, "original stdin") != 0) {
+			if ((tmp_in = open(s->input, O_RDONLY)) < 0) {
+				perror(s->input);
+				exit(EXIT_FAILURE);
+			}
+			dup2(tmp_in, STDIN_FILENO);
+		}
+		
+		if (strcmp(s->output, "original stdout") != 0) {
+			if ((tmp_out = open(s->output,
+					    O_WRONLY | O_CREAT | O_TRUNC,
+					    0666)) < 0) {
+				perror(s->output);
+				exit(EXIT_FAILURE);
+			}
+			dup2(tmp_out, STDOUT_FILENO);
 		}
 	}
 	
@@ -143,5 +184,8 @@ void exec_command(int fds[20], int ind_max, stage *s) {
 	}
 	args[s->argc] = NULL;
 	
-	execvp(s->args[0], args);
+	if (execvp(s->args[0], args)) {
+		perror(s->args[0]);
+		exit(EXIT_FAILURE);
+	}
 }

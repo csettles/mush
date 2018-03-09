@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #include "checker.h"
 
 void prompt(char *line);

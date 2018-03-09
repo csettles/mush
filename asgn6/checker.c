@@ -37,27 +37,22 @@ stage new_stage_s(int number) {
  @param input the command, args, and redirections
  @param stage_max the index of the last stage
  */
-void handle_stage(stage *s, char *input, int stage_max) {
-//	int last_index;
-	
-//	last_index = (int)strlen(input) - 1;
-//	if (input[last_index] == '\n') {
-//		input[last_index] = '\0';
-//		last_index--;
-//	}
+int handle_stage(stage *s, char *input, int stage_max) {
+	int flag = 0;
 
 	if (strlen(input) == 0 || all_space(input)) {
 		fprintf(stderr, "invalid null command\n");
-		exit(EXIT_FAILURE);
+		return 1;
 	}
 	
 	/* input is now the command */
 	
 	strcpy(s->line, input);
 	
-	handle_input(s, input, stage_max);
-	handle_output(s, input, stage_max);
-	handle_args(s, input, stage_max);
+	flag |= handle_input(s, input, stage_max);
+	flag |= handle_output(s, input, stage_max);
+	flag |= handle_args(s, input, stage_max);
+	return flag;
 }
 
 /**
@@ -67,7 +62,7 @@ void handle_stage(stage *s, char *input, int stage_max) {
  @param input the string of the command, args, and redirections
  @param stage_max the index of the last stage
  */
-void handle_input(stage *s, char *input, int stage_max) {
+int handle_input(stage *s, char *input, int stage_max) {
 	char *redir_pos, *input_dest;
 	char position_temp[LINE_MAX];
 	
@@ -93,6 +88,7 @@ void handle_input(stage *s, char *input, int stage_max) {
 	} else {
 		sprintf(s->input, "pipe from stage %d", s->num - 1);
 	}
+	return 0;
 }
 
 /**
@@ -102,7 +98,7 @@ void handle_input(stage *s, char *input, int stage_max) {
  @param input the string of the command, args, and redirections
  @param stage_max the index of the last stage
  */
-void handle_output(stage *s, char *input, int stage_max) {
+int handle_output(stage *s, char *input, int stage_max) {
 	char *redir_pos, *output;
 	char position_temp[LINE_MAX];
 	
@@ -129,6 +125,8 @@ void handle_output(stage *s, char *input, int stage_max) {
 	} else {
 		sprintf(s->output, "pipe to stage %d", s->num + 1);
 	}
+	
+	return 0;
 }
 
 /**
@@ -139,7 +137,7 @@ void handle_output(stage *s, char *input, int stage_max) {
  @param input the string of the command, arguments, and redirections
  @param stage_max the index of the last stage
  */
-void handle_args(stage *s, char *input, int stage_max) {
+int handle_args(stage *s, char *input, int stage_max) {
 	char input_copy[LINE_MAX];
 	char *token;
 	int len = 0;
@@ -156,7 +154,7 @@ void handle_args(stage *s, char *input, int stage_max) {
 		}
 		if (strlen(token) >= ARG_LEN) {
 			fprintf(stderr, "argument name too long\n");
-			exit(EXIT_FAILURE);
+			return 1;
 		}
 		strncpy(s->args[len], token, ARG_LEN);
 		len++;
@@ -166,10 +164,11 @@ void handle_args(stage *s, char *input, int stage_max) {
 	
 	if (len == ARG_MAX && token != NULL) {
 		fprintf(stderr, "too many arguments\n");
-		exit(EXIT_FAILURE);
+		return 1;
 	}
 	
 	s->argc = len;
+	return 0;
 }
 
 /**
@@ -184,12 +183,16 @@ stage *build_stages(char stages[STAGE_MAX][LINE_MAX], int len) {
 	stage *s, *temp;
 	
 	s = new_stage(0);
-	handle_stage(s, stages[0], len - 1);
+	if (handle_stage(s, stages[0], len - 1) > 0) {
+		return NULL;
+	}
 	
 	temp = s;
 	for (i = 1; i < len; i++) {
 		temp->next = new_stage(i);
-		handle_stage(temp->next, stages[i], len - 1);
+		if (handle_stage(temp->next, stages[i], len - 1) > 0) {
+			return NULL;
+		}
 		temp = temp->next;
 	}
 	

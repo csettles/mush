@@ -22,7 +22,7 @@
 #include <ctype.h>
 
 int split_line(char *line, char stages[STAGE_MAX][LINE_MAX]);
-void clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len);
+int clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len);
 int all_space(char *line);
 
 #endif /* parseline_h */

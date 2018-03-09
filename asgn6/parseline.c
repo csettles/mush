@@ -32,7 +32,7 @@ int split_line(char *line, char stages[STAGE_MAX][LINE_MAX]) {
 	if (token != NULL) {
 		/* token would be NULL if */
 		fprintf(stderr, "pipeline too deep\n");
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 	
 	return len;
@@ -47,7 +47,7 @@ int split_line(char *line, char stages[STAGE_MAX][LINE_MAX]) {
  @param stages a list of char* pointing to each stage in the input
  @param len the number of stages in the line
  */
-void clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
+int clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
 	int i;
 	char line_copy[LINE_MAX];
 	char *temp;
@@ -59,13 +59,13 @@ void clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
 	if (strstr(line, "|") &&
 	    (strstr(line, "cd ") - line == 0 || strstr(line, " cd "))) {
 		fprintf(stderr, "tried to change directory in pipeline\n");
-		exit(EXIT_FAILURE);
+		return 1;
 	}
 	
 	while(temp != NULL) {
 		if (all_space(temp)) {
 			fprintf(stderr, "invalid null command\n");
-			exit(EXIT_FAILURE);
+			return 1;
 		}
 		/* Handle excess white spae? */
 		temp = strtok(NULL, "|");
@@ -83,7 +83,7 @@ void clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
 			if (temp != NULL) {
 				/* Need to get command it failed on */
 				fprintf(stderr, "bad input redirection\n");
-				exit(EXIT_FAILURE);
+				return 1;
 			}
 		}
 		
@@ -95,7 +95,7 @@ void clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
 			if (temp != NULL) {
 				/* Need to get command failed on */
 				fprintf(stderr, "bad output redirection\n");
-				exit(EXIT_FAILURE);
+				return 1;
 			}
 		}
 	}
@@ -107,7 +107,7 @@ void clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
 			/* Stages after 1 have a pipe in, if also <, exit */
 			if ((temp = strchr(stages[i], '<')) != NULL) {
 				fprintf(stderr, "ambigious input\n");
-				exit(EXIT_FAILURE);
+				return 1;
 			}
 		}
 	}
@@ -116,9 +116,10 @@ void clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
 		/* Stages that pipe out cannot have a file redirection out */
 		if ((temp = strchr(stages[i], '>')) != NULL) {
 			fprintf(stderr, "ambigious output\n");
-			exit(EXIT_FAILURE);
+			return 1;
 		}
 	}
+	return 0;
 }    
 
 /**
