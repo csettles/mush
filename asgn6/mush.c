@@ -31,9 +31,23 @@ int main(int argc, const char * argv[]) {
 			perror(argv[1]);
 			exit(EXIT_FAILURE);
 		}	
+
 		i = 0;
 		memset(line, 0, strlen(line));
+
 		while((content = fgetc(fp)) != EOF) {
+			if (i >= LINE_MAX) {
+				/* this line is too big */
+				/* if new line char, wipe it */
+				if (content == '\n') {
+					i = 0; 
+					memset(line, 0, strlen(line));
+					fprintf(stderr, "command too long\n");
+					continue; 
+				}
+				/* let it keep running, eating up line */
+				i--; 
+			}
 			if (content == '\n') {
 				/* will have grabbed line, set null term */
 				line[i] = 0; 
@@ -43,7 +57,7 @@ int main(int argc, const char * argv[]) {
 					i = 0;
                                 	memset(line, 0, strlen(line));
 					continue;
-                        	}
+				}
 				
 				num_pipes = num_stages(s) - 1;
 	                        for (i = 0; i < num_pipes; i++) {
