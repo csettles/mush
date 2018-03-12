@@ -1,10 +1,11 @@
-//
+/*
 //  main.c
 //  asgn6
 //
 //  Created by Caitlin Settles on 3/7/18.
 //  Copyright © 2018 Caitlin Settles. All rights reserved.
 //
+*/
 
 #include "mush.h"
 
@@ -12,8 +13,10 @@ int main(int argc, const char * argv[]) {
 	char line[LINE_MAX + 2];
 	sigset_t new, old;
 	stage *s;
-	int fds[20], num_pipes, i;
+	int fds[20], num_pipes, status,  i;
 	pid_t child;
+	FILE* fp;
+	char content; 
 	
 	sigemptyset(&new);
 	sigaddset(&new, SIGINT);
@@ -23,16 +26,82 @@ int main(int argc, const char * argv[]) {
 	
 	if (argc > 1) {
 		/* read file and get_stages for each line */
+		fp = fopen(argv[1], "r"); 
+		if (fp == NULL) {
+			perror(argv[1]);
+			exit(EXIT_FAILURE);
+		}	
+		i = 0;
+		memset(line, 0, strlen(line));
+		while((content = fgetc(fp)) != EOF) {
+			if (content == '\n') {
+				/* will have grabbed line, set null term */
+				line[i] = 0; 
+				
+				if ((s = get_stages(line)) == NULL) {
+					/* line was too long error, otherwise other error */
+					i = 0;
+                                	memset(line, 0, strlen(line));
+					continue;
+                        	}
+				
+				num_pipes = num_stages(s) - 1;
+	                        for (i = 0; i < num_pipes; i++) {
+        	                        if (pipe(fds + i * 2)) {
+                	                        perror("mush");
+                       	                 	exit(EXIT_FAILURE);
+                       	         	}
+                       		}
+
+                        	while (s) {
+                                	if ((child = fork()) == 0) {
+                                        	sigprocmask(SIG_SETMASK, &old, NULL);
+                                        	exec_command(fds, num_pipes, s);
+                                	} else if (child < 0) {
+                                        	perror("mush");
+                                        	exit(EXIT_FAILURE);
+                                	}
+
+                                	fflush(stdout);
+                                	s = s->next;
+                        	}	
+
+                        	for (i = 0; i < num_pipes * 2; i++) {
+                                	/* close open pipes so processes don't hang */
+                                	close(fds[i]);
+                        	}
+
+                        	for (i = 0; i < num_pipes + 1; i++) {
+                               		child = wait(&status);
+                                	/* exits cleanly */
+                                	if (WEXITSTATUS(status) == 0) {
+                                        	continue;
+                                	/* finds an error */
+                                	} else {
+                                        	status = EXIT_FAILURE;
+                                        	exit(status);
+                                	}
+                        	}
+
+				/* cleans out line */
+				i = 0;
+				memset(line, 0, strlen(line)); 
+			} else {	
+				line[i++] = content;
+			}
+		}	
+		fclose(fp);  		
 		return 0;
 	} else {
 		while (1) {
 			/* only way to drop out of this loop is ^D */
 			
 			prompt(line);
+		
 			if ((s = get_stages(line)) == NULL) {
 				/* error occurred or directory was changed */
 				continue;
-			}
+			} 
 			
 			num_pipes = num_stages(s) - 1;
 			for (i = 0; i < num_pipes; i++) {
@@ -61,10 +130,15 @@ int main(int argc, const char * argv[]) {
 			}
 			
 			for (i = 0; i < num_pipes + 1; i++) {
-				/* TODO: check return status of child and
-				 stop all pipes if one command fails */
-				child = wait(NULL);
-				printf("child %d exited\n", child);
+				child = wait(&status);
+				/* exits cleanly */
+				if (WEXITSTATUS(status) == 0) {
+					continue; 
+				/* finds an error */ 
+				} else {
+                        		status = EXIT_FAILURE;	
+					exit(status); 
+				}
 			}
 		}
 		return 0;
@@ -73,8 +147,8 @@ int main(int argc, const char * argv[]) {
 
 void prompt(char *line) {
 	int ind;
-	
-	printf("mush>\t");
+
+	printf("8-P ");
 	fgets(line, LINE_MAX + 2, stdin);
 	if (feof(stdin)) {
 		printf("\n");
@@ -91,7 +165,7 @@ stage *get_stages(char *line) {
 	int str_len, stage_len;
 	char *dir;
 	char stages[STAGE_MAX][LINE_MAX];
-	
+
 	str_len = (int)strlen(line);
 	if (str_len > LINE_MAX) {
 		/* TODO: consume rest of line if it is too long */
