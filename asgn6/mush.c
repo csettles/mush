@@ -64,7 +64,6 @@ int main(int argc, const char * argv[]) {
 				/* TODO: check return status of child and
 				 stop all pipes if one command fails */
 				child = wait(NULL);
-				printf("child %d exited\n", child);
 			}
 		}
 		return 0;
@@ -74,7 +73,7 @@ int main(int argc, const char * argv[]) {
 void prompt(char *line) {
 	int ind;
 	
-	printf("mush>\t");
+	printf("8-P ");
 	fgets(line, LINE_MAX + 2, stdin);
 	if (feof(stdin)) {
 		printf("\n");
