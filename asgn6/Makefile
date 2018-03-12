@@ -23,7 +23,3 @@ checker.o: checker.c
 clean:
 	ls -al *.o
 	rm -f *.o
-
-test:
-	make mush
-	~pn-cs357/demos/tryAsgn6

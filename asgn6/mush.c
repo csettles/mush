@@ -93,7 +93,7 @@ stage *get_stages(char *line) {
 	
 	str_len = (int)strlen(line);
 	if (str_len > LINE_MAX) {
-		/* TODO: consume rest of line if it is too long */
+		fseek(stdin, 0, SEEK_END); /* seek to end of line */
 		fprintf(stderr, "command too long\n");
 		return NULL;
 	}
