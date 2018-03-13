@@ -75,7 +75,7 @@ void eval_pipeline(char *line, sigset_t old) {
 	stage *s;
 	int i, num_pipes, status;
 	int fds[STAGE_MAX * 2];
-	pid_t proc, children[STAGE_MAX];
+	pid_t proc;
 	
 	
 	if ((s = get_stages(line)) == NULL) {
@@ -92,10 +92,10 @@ void eval_pipeline(char *line, sigset_t old) {
 	}
 	
 	for (i = 0; i < num_pipes + 1; i++) {
-		if ((children[i] = fork()) == 0) {
+		if ((proc = fork()) == 0) {
 			sigprocmask(SIG_SETMASK, &old, NULL);
 			exec_command(fds, num_pipes, s);
-		} else if (children[i] < 0) {
+		} else if (proc < 0) {
 			perror("mush");
 			exit(EXIT_FAILURE);
 		}
