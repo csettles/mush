@@ -45,19 +45,20 @@ int main(int argc, const char * argv[]) {
 				}
 				/* let it keep running, eating up line */
 				i--; 
-			}
-			if (content == '\n') {
-				/* will have grabbed line, set null term */
-				line[i] = 0; 
+			} else { 
+				if (content == '\n') {
+					/* will have grabbed line, set null */
+					line[i] = 0; 
 				
-				eval_pipeline(line, old);
+					eval_pipeline(line, old);
 
-				/* cleans out line */
-				i = 0;
-				memset(line, 0, strlen(line)); 
-			} else {	
-				line[i++] = content;
-			}
+					/* cleans out line */
+					i = 0;
+					memset(line, 0, strlen(line)); 
+				} else {	
+					line[i++] = content;
+				}
+			}	
 		}	
 		fclose(fp);  		
 		return 0;
@@ -110,10 +111,9 @@ void eval_pipeline(char *line, sigset_t old) {
 	}
 	
 	for (i = 0; i < num_pipes + 1; i++) {
-		proc = wait(&status);
+		wait(&status);
 		/* exits cleanly */
 		if (WEXITSTATUS(status) != 0) {
-			printf("child %d failed\n", proc);
 			kill(-getpgrp(), SIGINT);
 		}
 	}
