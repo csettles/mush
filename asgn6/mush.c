@@ -46,18 +46,20 @@ int main(int argc, const char * argv[]) {
 				/* let it keep running, eating up line */
 				i--; 
 			}
-			if (content == '\n') {
-				/* will have grabbed line, set null term */
-				line[i] = 0; 
+			else { 
+				if (content == '\n') {
+					/* will have grabbed line, set null term */
+					line[i] = 0; 
 				
-				eval_pipeline(line, old);
+					eval_pipeline(line, old);
 
-				/* cleans out line */
-				i = 0;
-				memset(line, 0, strlen(line)); 
-			} else {	
-				line[i++] = content;
-			}
+					/* cleans out line */
+					i = 0;
+					memset(line, 0, strlen(line)); 
+				} else {	
+					line[i++] = content;
+				}
+			}	
 		}	
 		fclose(fp);  		
 		return 0;
