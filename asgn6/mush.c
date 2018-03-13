@@ -45,10 +45,9 @@ int main(int argc, const char * argv[]) {
 				}
 				/* let it keep running, eating up line */
 				i--; 
-			}
-			else { 
+			} else { 
 				if (content == '\n') {
-					/* will have grabbed line, set null term */
+					/* will have grabbed line, set null */
 					line[i] = 0; 
 				
 					eval_pipeline(line, old);
@@ -77,7 +76,7 @@ void eval_pipeline(char *line, sigset_t old) {
 	stage *s;
 	int i, num_pipes, status;
 	int fds[STAGE_MAX * 2];
-	pid_t proc, children[STAGE_MAX];
+	pid_t children[STAGE_MAX];
 	
 	
 	if ((s = get_stages(line)) == NULL) {
@@ -112,10 +111,9 @@ void eval_pipeline(char *line, sigset_t old) {
 	}
 	
 	for (i = 0; i < num_pipes + 1; i++) {
-		proc = wait(&status);
+		wait(&status);
 		/* exits cleanly */
 		if (WEXITSTATUS(status) != 0) {
-			printf("child %d failed\n", proc);
 			kill(-getpgrp(), SIGINT);
 		}
 	}
