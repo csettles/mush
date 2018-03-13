@@ -10,173 +10,173 @@
 #include "mush.h"
 
 int main(int argc, const char * argv[]) {
-	char line[LINE_MAX + 2];
-	sigset_t new, old;
-	int i;
-	FILE* fp;
-	int content;
-	
-	sigemptyset(&new);
-	sigaddset(&new, SIGINT);
-	sigprocmask(SIG_BLOCK, &new, &old);
-	
-	/* sigint is now disabled */
-	
-	if (argc > 1) {
-		/* read file and get_stages for each line */
-		fp = fopen(argv[1], "r"); 
-		if (fp == NULL) {
-			perror(argv[1]);
-			exit(EXIT_FAILURE);
-		}	
+    char line[LINE_MAX + 2];
+    sigset_t new, old;
+    int i;
+    FILE* fp;
+    int content;
+    
+    sigemptyset(&new);
+    sigaddset(&new, SIGINT);
+    sigprocmask(SIG_BLOCK, &new, &old);
+    
+    /* sigint is now disabled */
+    
+    if (argc > 1) {
+        /* read file and get_stages for each line */
+        fp = fopen(argv[1], "r"); 
+        if (fp == NULL) {
+            perror(argv[1]);
+            exit(EXIT_FAILURE);
+        }    
 
-		i = 0;
-		memset(line, 0, strlen(line));
+        i = 0;
+        memset(line, 0, strlen(line));
 
-		while((content = fgetc(fp)) != EOF) {
-			if (i >= LINE_MAX) {
-				/* this line is too big */
-				/* if new line char, wipe it */
-				if (content == '\n') {
-					i = 0; 
-					memset(line, 0, strlen(line));
-					fprintf(stderr, "command too long\n");
-					continue; 
-				}
-				/* let it keep running, eating up line */
-				i--; 
-			} else { 
-				if (content == '\n') {
-					/* will have grabbed line, set null */
-					line[i] = 0; 
-				
-					eval_pipeline(line, old);
+        while((content = fgetc(fp)) != EOF) {
+            if (i >= LINE_MAX) {
+                /* this line is too big */
+                /* if new line char, wipe it */
+                if (content == '\n') {
+                    i = 0; 
+                    memset(line, 0, strlen(line));
+                    fprintf(stderr, "command too long\n");
+                    continue; 
+                }
+                /* let it keep running, eating up line */
+                i--; 
+            } else { 
+                if (content == '\n') {
+                    /* will have grabbed line, set null */
+                    line[i] = 0; 
+                
+                    eval_pipeline(line, old);
 
-					/* cleans out line */
-					i = 0;
-					memset(line, 0, strlen(line)); 
-				} else {	
-					line[i++] = content;
-				}
-			}	
-		}	
-		fclose(fp);  		
-		return 0;
-	} else {
-		while (1) {
-			/* only way to drop out of this loop is ^D */
-			prompt(line);
-			eval_pipeline(line, old);
-		}
-		return 0;
-	}
+                    /* cleans out line */
+                    i = 0;
+                    memset(line, 0, strlen(line)); 
+                } else {    
+                    line[i++] = content;
+                }
+            }    
+        }    
+        fclose(fp);          
+        return 0;
+    } else {
+        while (1) {
+            /* only way to drop out of this loop is ^D */
+            prompt(line);
+            eval_pipeline(line, old);
+        }
+        return 0;
+    }
 }
 
 void eval_pipeline(char *line, sigset_t old) {
-	stage *s;
-	int i, num_pipes, status;
-	int fds[STAGE_MAX * 2];
+    stage *s;
+    int i, num_pipes, status;
+    int fds[STAGE_MAX * 2];
 	pid_t proc;
-	
-	
-	if ((s = get_stages(line)) == NULL) {
-		/* line was too long error, otherwise other error */
-		return;
-	}
-	
-	num_pipes = num_stages(s) - 1;
-	for (i = 0; i < num_pipes; i++) {
-		if (pipe(fds + i * 2)) {
-			perror("mush");
-			exit(EXIT_FAILURE);
-		}
-	}
-	
-	for (i = 0; i < num_pipes + 1; i++) {
-		if ((proc = fork()) == 0) {
-			sigprocmask(SIG_SETMASK, &old, NULL);
-			exec_command(fds, num_pipes, s);
-		} else if (proc < 0) {
-			perror("mush");
-			exit(EXIT_FAILURE);
-		}
-		
-		fflush(stdout);
-		s = s->next;
-	}
-	
-	for (i = 0; i < num_pipes * 2; i++) {
-		/* close open pipes so processes don't hang */
-		close(fds[i]);
-	}
-	
-	for (i = 0; i < num_pipes + 1; i++) {
-		wait(&status);
-		/* exits cleanly */
-		if (WEXITSTATUS(status) != 0) {
-			kill(-getpgrp(), SIGINT);
-		}
-	}
+    
+    
+    if ((s = get_stages(line)) == NULL) {
+        /* line was too long error, otherwise other error */
+        return;
+    }
+    
+    num_pipes = num_stages(s) - 1;
+    for (i = 0; i < num_pipes; i++) {
+        if (pipe(fds + i * 2)) {
+            perror("mush");
+            exit(EXIT_FAILURE);
+        }
+    }
+    
+    for (i = 0; i < num_pipes + 1; i++) {
+        if ((proc = fork()) == 0) {
+            sigprocmask(SIG_SETMASK, &old, NULL);
+            exec_command(fds, num_pipes, s);
+        } else if (proc < 0) {
+            perror("mush");
+            exit(EXIT_FAILURE);
+        }
+        
+        fflush(stdout);
+        s = s->next;
+    }
+    
+    for (i = 0; i < num_pipes * 2; i++) {
+        /* close open pipes so processes don't hang */
+        close(fds[i]);
+    }
+    
+    for (i = 0; i < num_pipes + 1; i++) {
+        wait(&status);
+        /* exits cleanly */
+        if (WEXITSTATUS(status) != 0) {
+            kill(-getpgrp(), SIGINT);
+        }
+    }
 }
 
 void prompt(char *line) {
-	int ind;
+    int ind;
 
-	printf("8-P ");
-	fgets(line, LINE_MAX + 2, stdin);
-	if (feof(stdin)) {
-		printf("\n");
-		exit(0);
-	}
-	
-	ind = (int)strlen(line) - 1;
-	if (line[ind] == '\n') {
-		line[ind] = '\0';
-	}
+    printf("8-P ");
+    fgets(line, LINE_MAX + 2, stdin);
+    if (feof(stdin)) {
+        printf("\n");
+        exit(0);
+    }
+    
+    ind = (int)strlen(line) - 1;
+    if (line[ind] == '\n') {
+        line[ind] = '\0';
+    }
 }
 
 stage *get_stages(char *line) {
-	int str_len, stage_len;
-	int c;
-	char *dir;
-	char stages[STAGE_MAX][LINE_MAX];
+    int str_len, stage_len;
+    int c;
+    char *dir;
+    char stages[STAGE_MAX][LINE_MAX];
 
-	str_len = (int)strlen(line);
-	if (str_len > LINE_MAX) {
-		while ((c = getchar()) != '\n' && c != EOF) {
-			/* flush stdin */;
-		}
-		fprintf(stderr, "command too long\n");
-		return NULL;
-	}
-	
-	stage_len = split_line(line, stages);
-	if (stage_len < 0) {
-		return NULL;
-	}
-	
-	if (clean_line(line, stages, stage_len) == 1) {
-		return NULL;
-	}
-	
-	if (strstr(line, "cd") != NULL) {
-		dir = strtok(line, " ");
-		dir = strtok(NULL, " ");
-		if (all_space(dir)) {
-			fprintf(stderr, "destination required\n");
-			return NULL;
-		}
-		if (chdir(dir)) {
-			perror(dir);
-		}
-		return NULL;
-	}
-	
-	if (strcmp(line, "exit") == 0) {
-		exit(EXIT_SUCCESS);
-	}
-	
-	return build_stages(stages, stage_len);;
+    str_len = (int)strlen(line);
+    if (str_len > LINE_MAX) {
+        while ((c = getchar()) != '\n' && c != EOF) {
+            /* flush stdin */;
+        }
+        fprintf(stderr, "command too long\n");
+        return NULL;
+    }
+    
+    stage_len = split_line(line, stages);
+    if (stage_len < 0) {
+        return NULL;
+    }
+    
+    if (clean_line(line, stages, stage_len) == 1) {
+        return NULL;
+    }
+    
+    if (strstr(line, "cd") != NULL) {
+        dir = strtok(line, " ");
+        dir = strtok(NULL, " ");
+        if (all_space(dir)) {
+            fprintf(stderr, "destination required\n");
+            return NULL;
+        }
+        if (chdir(dir)) {
+            perror(dir);
+        }
+        return NULL;
+    }
+    
+    if (strcmp(line, "exit") == 0) {
+        exit(EXIT_SUCCESS);
+    }
+    
+    return build_stages(stages, stage_len);;
 }
 
 void exec_command(int fds[20], int ind_max, stage *s) {
