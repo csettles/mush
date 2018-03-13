@@ -160,7 +160,6 @@ int handle_args(stage *s, char *input, int stage_max) {
 		len++;
 		token = strtok(NULL, " ");
 	}
-	*s->args[len] = (char)NULL;
 	
 	if (len == ARG_MAX && token != NULL) {
 		fprintf(stderr, "too many arguments\n");

@@ -73,7 +73,7 @@ int main(int argc, const char * argv[]) {
 
 void eval_pipeline(char *line, sigset_t old) {
 	stage *s;
-	int i, j, num_pipes, status;
+	int i, num_pipes, status;
 	int fds[STAGE_MAX * 2];
 	pid_t proc, children[STAGE_MAX];
 	
