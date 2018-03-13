@@ -18,5 +18,6 @@
 void prompt(char *line);
 stage *get_stages(char *line);
 void exec_command(int fds[20], int ind, stage *s);
+void eval_pipeline(char *line, sigset_t old);
 
 #endif /* mush_h */

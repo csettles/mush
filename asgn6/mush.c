@@ -12,11 +12,9 @@
 int main(int argc, const char * argv[]) {
 	char line[LINE_MAX + 2];
 	sigset_t new, old;
-	stage *s;
-	int fds[20], num_pipes, status,  i;
-	pid_t child;
+	int i;
 	FILE* fp;
-	char content; 
+	int content;
 	
 	sigemptyset(&new);
 	sigaddset(&new, SIGINT);
@@ -52,50 +50,7 @@ int main(int argc, const char * argv[]) {
 				/* will have grabbed line, set null term */
 				line[i] = 0; 
 				
-				if ((s = get_stages(line)) == NULL) {
-					/* line was too long error, otherwise other error */
-					i = 0;
-                                	memset(line, 0, strlen(line));
-					continue;
-				}
-				
-				num_pipes = num_stages(s) - 1;
-	                        for (i = 0; i < num_pipes; i++) {
-        	                        if (pipe(fds + i * 2)) {
-                	                        perror("mush");
-                       	                 	exit(EXIT_FAILURE);
-                       	         	}
-                       		}
-
-                        	while (s) {
-                                	if ((child = fork()) == 0) {
-                                        	sigprocmask(SIG_SETMASK, &old, NULL);
-                                        	exec_command(fds, num_pipes, s);
-                                	} else if (child < 0) {
-                                        	perror("mush");
-                                        	exit(EXIT_FAILURE);
-                                	}
-
-                                	fflush(stdout);
-                                	s = s->next;
-                        	}	
-
-                        	for (i = 0; i < num_pipes * 2; i++) {
-                                	/* close open pipes so processes don't hang */
-                                	close(fds[i]);
-                        	}
-
-                        	for (i = 0; i < num_pipes + 1; i++) {
-                               		child = wait(&status);
-                                	/* exits cleanly */
-                                	if (WEXITSTATUS(status) == 0) {
-                                        	continue;
-                                	/* finds an error */
-                                	} else {
-                                        	status = EXIT_FAILURE;
-                                        	exit(status);
-                                	}
-                        	}
+				eval_pipeline(line, old);
 
 				/* cleans out line */
 				i = 0;
@@ -109,53 +64,58 @@ int main(int argc, const char * argv[]) {
 	} else {
 		while (1) {
 			/* only way to drop out of this loop is ^D */
-			
 			prompt(line);
-		
-			if ((s = get_stages(line)) == NULL) {
-				/* error occurred or directory was changed */
-				continue;
-			} 
-			
-			num_pipes = num_stages(s) - 1;
-			for (i = 0; i < num_pipes; i++) {
-				if (pipe(fds + i * 2)) {
-					perror("mush");
-					exit(EXIT_FAILURE);
-				}
-			}
-			
-			while (s) {
-				if ((child = fork()) == 0) {
-					sigprocmask(SIG_SETMASK, &old, NULL);
-					exec_command(fds, num_pipes, s);
-				} else if (child < 0) {
-					perror("mush");
-					exit(EXIT_FAILURE);
-				}
-				
-				fflush(stdout);
-				s = s->next;
-			}
-			
-			for (i = 0; i < num_pipes * 2; i++) {
-				/* close open pipes so processes don't hang */
-				close(fds[i]);
-			}
-			
-			for (i = 0; i < num_pipes + 1; i++) {
-				child = wait(&status);
-				/* exits cleanly */
-				if (WEXITSTATUS(status) == 0) {
-					continue; 
-				/* finds an error */ 
-				} else {
-                        		status = EXIT_FAILURE;	
-					exit(status); 
-				}
-			}
+			eval_pipeline(line, old);
 		}
 		return 0;
+	}
+}
+
+void eval_pipeline(char *line, sigset_t old) {
+	stage *s;
+	int i, j, num_pipes, status;
+	int fds[STAGE_MAX * 2];
+	pid_t proc, children[STAGE_MAX];
+	
+	
+	if ((s = get_stages(line)) == NULL) {
+		/* line was too long error, otherwise other error */
+		return;
+	}
+	
+	num_pipes = num_stages(s) - 1;
+	for (i = 0; i < num_pipes; i++) {
+		if (pipe(fds + i * 2)) {
+			perror("mush");
+			exit(EXIT_FAILURE);
+		}
+	}
+	
+	for (i = 0; i < num_pipes + 1; i++) {
+		if ((children[i] = fork()) == 0) {
+			sigprocmask(SIG_SETMASK, &old, NULL);
+			exec_command(fds, num_pipes, s);
+		} else if (children[i] < 0) {
+			perror("mush");
+			exit(EXIT_FAILURE);
+		}
+		
+		fflush(stdout);
+		s = s->next;
+	}
+	
+	for (i = 0; i < num_pipes * 2; i++) {
+		/* close open pipes so processes don't hang */
+		close(fds[i]);
+	}
+	
+	for (i = 0; i < num_pipes + 1; i++) {
+		proc = wait(&status);
+		/* exits cleanly */
+		if (WEXITSTATUS(status) != 0) {
+			printf("child %d failed\n", proc);
+			kill(-getpgrp(), SIGINT);
+		}
 	}
 }
 
@@ -177,12 +137,15 @@ void prompt(char *line) {
 
 stage *get_stages(char *line) {
 	int str_len, stage_len;
+	int c;
 	char *dir;
 	char stages[STAGE_MAX][LINE_MAX];
 
 	str_len = (int)strlen(line);
 	if (str_len > LINE_MAX) {
-		fseek(stdin, 0, SEEK_END); /* ignore rest of line */
+		while ((c = getchar()) != '\n' && c != EOF) {
+			/* flush stdin */;
+		}
 		fprintf(stderr, "command too long\n");
 		return NULL;
 	}
@@ -207,6 +170,10 @@ stage *get_stages(char *line) {
 			perror(dir);
 		}
 		return NULL;
+	}
+	
+	if (strcmp(line, "exit") == 0) {
+		exit(EXIT_SUCCESS);
 	}
 	
 	return build_stages(stages, stage_len);;
