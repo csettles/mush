@@ -76,7 +76,7 @@ void eval_pipeline(char *line, sigset_t old) {
     stage *s;
     int i, num_pipes, status;
     int fds[STAGE_MAX * 2];
-	pid_t proc;
+    pid_t proc;
     
     
     if ((s = get_stages(line)) == NULL) {
@@ -111,12 +111,12 @@ void eval_pipeline(char *line, sigset_t old) {
     }
     
     for (i = 0; i < num_pipes + 1; i++) {
-        wait(&status);
+        proc = wait(&status);
         /* exits cleanly */
         if (WEXITSTATUS(status) != 0) {
-            kill(-getpgrp(), SIGTERM);
-	} else if (WIFSIGNALED(status) && WTERMSIG(status) != 15) {
-		printf("\n");
+            kill(-getpgrp(), SIGINT);
+	} else if (WIFSIGNALED(status)) {
+	    printf("\n");
 	}
     }
 }
