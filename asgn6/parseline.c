@@ -115,7 +115,15 @@ int clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
 	for (i = 0; i < len-1; i++) {
 		/* Stages that pipe out cannot have a file redirection out */
 		if ((temp = strchr(stages[i], '>')) != NULL) {
-			fprintf(stderr, "ambigious output\n");
+			if (*stages[i] == ' ') {
+				temp = (char *)(stages + 1);
+			} else {
+				temp = (char *)stages;
+			}
+			printf("%d\n", (int)(strchr(temp, ' ') - temp));
+			fprintf(stderr, "%*s: ambigious output\n",
+				(int)(strchr(temp, ' ') - temp),
+				temp);
 			return 1;
 		}
 	}

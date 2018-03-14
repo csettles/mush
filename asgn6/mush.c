@@ -1,11 +1,17 @@
-/*
- //  main.c
- //  asgn6
- //
- //  Created by Caitlin Settles on 3/7/18.
- //  Copyright © 2018 Caitlin Settles. All rights reserved.
- //
- */
+/*=============================================================================
+ *   Assignment:  Assignment 6: mush
+ *
+ *       Author:  Caitlin Settles and Donald Loveland
+ *        Class:  CSC 357 Section 01
+ *     Due Date:  03/14/18
+ *
+ *-----------------------------------------------------------------------------
+ *
+ *  Description:  Miniminall Useful SHell
+ *
+ *        Input:  A pipeline of up to 10 commands
+ *
+ *===========================================================================*/
 
 #include "mush.h"
 
@@ -64,7 +70,7 @@ int main(int argc, const char * argv[]) {
 		return 0;
 	} else {
 		while (1) {
-			/* only way to drop out of this loop is ^D */
+			/* drop out of this loop with EOF or SIGQUIT */
 			prompt(line);
 			eval_pipeline(line, old);
 		}
@@ -72,6 +78,13 @@ int main(int argc, const char * argv[]) {
 	}
 }
 
+/**
+ Evaluates a pipeline (series of commands) by forking and exec'ing each
+ stage.
+
+ @param line the lineo of commands
+ @param old the old proc mask to return to in the children
+ */
 void eval_pipeline(char *line, sigset_t old) {
 	stage *s;
 	int i, num_pipes, status, signaled = 0;
@@ -113,6 +126,7 @@ void eval_pipeline(char *line, sigset_t old) {
 	for (i = 0; i < num_pipes + 1; i++) {
 		proc = wait(&status);
 		if (WIFSIGNALED(status) && WTERMSIG(status) == 2) {
+			/* prints newline if ^C is pressed */
 			signaled = 1;
 		}
 	}
@@ -122,6 +136,13 @@ void eval_pipeline(char *line, sigset_t old) {
 	}
 }
 
+/**
+ If the shell is run in interactive mode, prints the prompt and does some
+ preliminary processing on the input. Checks the user hasn't sent an EOF and
+ replaces the newline with a null character.
+
+ @param line the buffer to store the line in
+ */
 void prompt(char *line) {
 	int ind;
 	
@@ -138,6 +159,15 @@ void prompt(char *line) {
 	}
 }
 
+/**
+ Returns a stage as long as there are no other errors. An error case can be
+ the input is over the maximum length allowed, or the command is nonexistant
+ (empty). Also catches the case of cd or exit, in which case the action is
+ performed before further processing of the line.
+
+ @param line the line of input
+ @return NULL or a pointer to a list of stages
+ */
 stage *get_stages(char *line) {
 	int str_len, stage_len;
 	int c;
