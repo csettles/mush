@@ -148,6 +148,8 @@ stage *get_stages(char *line) {
         }
         fprintf(stderr, "command too long\n");
         return NULL;
+    } else if (str_len == 0) {
+	    return NULL;
     }
     
     stage_len = split_line(line, stages);
