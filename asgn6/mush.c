@@ -114,8 +114,10 @@ void eval_pipeline(char *line, sigset_t old) {
         wait(&status);
         /* exits cleanly */
         if (WEXITSTATUS(status) != 0) {
-            kill(-getpgrp(), SIGINT);
-        }
+            kill(-getpgrp(), SIGKILL);
+	} else if (WIFSIGNALED(status) && WTERMSIG(status) != 9) {
+		printf("\n");
+	}
     }
 }
 
