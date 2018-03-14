@@ -74,7 +74,7 @@ int main(int argc, const char * argv[]) {
 
 void eval_pipeline(char *line, sigset_t old) {
     stage *s;
-    int i, num_pipes, status, set_status;
+    int i, num_pipes, status;
     int fds[STAGE_MAX * 2];
 	pid_t proc;
     
@@ -113,17 +113,10 @@ void eval_pipeline(char *line, sigset_t old) {
     for (i = 0; i < num_pipes + 1; i++) {
         wait(&status);
         /* exits cleanly */
-	if (WIFEXITED(status)) {
-		if (set_status = WEXITSTATUS(status) != 0) {
-			kill(-getpgrp(), SIGTERM);
-		}
-	/* exits incorrectly */ 
-	} else {
-		if (WIFSIGNALED(status) != 0) {
-			if (WTERMSIG(status) == 2) {
-				printf("\n");
-			}
-		}
+    	if (WEXITSTATUS(status) != 0) {
+            kill(-getpgrp(), SIGTERM);
+	} else if (WIFSIGNALED(status) && WTERMSIG(status) == 2) {
+		printf("\n");
 	}
     }
 }
