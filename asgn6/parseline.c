@@ -48,9 +48,9 @@ int split_line(char *line, char stages[STAGE_MAX][LINE_MAX]) {
  @param len the number of stages in the line
  */
 int clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
-	int i;
+	int i, end;
 	char line_copy[LINE_MAX];
-	char *temp;
+	char *temp, *pos;
 	
 	/* Checks there are no empty stages */
 	memcpy(line_copy, line, strlen(line) + 1);
@@ -71,7 +71,6 @@ int clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
 		temp = strtok(NULL, "|");
 	}
 	
-	/* TODO: Handle missing names and get command failed on */
 	/* Checks there aren't more than one '<' or '>' in any stages*/
 	for (i = 0; i < len; i++) {
 		
@@ -103,19 +102,50 @@ int clean_line(char *line, char stages[STAGE_MAX][LINE_MAX], int len) {
 	/* Handle check for both a redirect and pipe */
 	/* Handle input, check everything after first */
 	if (len > 1) {
+		/* create a copy */
+		memcpy(line_copy, line, strlen(line) + 1);
+        	temp = strtok(line_copy, "<");
+		
+		/* trim trailing white space */
+		end = strlen(temp) - 1;
+		while (isspace(temp[end])){
+			end--; 
+		}
+		temp[end + 1] = 0;
+		
+		/* find last word */
+		pos = strrchr(temp, ' ');
+		
 		for (i = 1; i < len; i++) {
 			/* Stages after 1 have a pipe in, if also <, exit */
 			if ((temp = strchr(stages[i], '<')) != NULL) {
-				fprintf(stderr, "ambigious input\n");
+				fprintf(stderr, "%s: ambigious input\n", pos + 1);
 				return 1;
 			}
 		}
 	}
 	/* Handle output, check everything but last */
 	for (i = 0; i < len-1; i++) {
+		/* create a copy */
+                memcpy(line_copy, line, strlen(line) + 1);
+                temp = strtok(line_copy, ">");
+
+                /* trim trailing white space */
+                end = strlen(temp) - 1;
+                while (isspace(temp[end])){
+                        end--;
+                }
+                temp[end + 1] = 0;
+                
+		/* find last word */
+		pos = strrchr(temp, ' ');
+		if (pos == NULL) {
+			pos = temp; 
+		}
+			
 		/* Stages that pipe out cannot have a file redirection out */
 		if ((temp = strchr(stages[i], '>')) != NULL) {
-			fprintf(stderr, "ambigious output\n");
+			fprintf(stderr, "%s: ambigious output\n", pos);
 			return 1;
 		}
 	}
