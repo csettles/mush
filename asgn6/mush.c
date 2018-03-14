@@ -112,11 +112,7 @@ void eval_pipeline(char *line, sigset_t old) {
 	
 	for (i = 0; i < num_pipes + 1; i++) {
 		proc = wait(&status);
-		/* exits cleanly */
-		if (WEXITSTATUS(status) != 0) {
-			kill(-getpgrp(), SIGINT);
-		} else if (WIFSIGNALED(status) && WTERMSIG(status) == 2) {
-			/*printf("%d", WTERMSIG(status));*/
+		if (WIFSIGNALED(status) && WTERMSIG(status) == 2) {
 			signaled = 1;
 		}
 	}
@@ -250,7 +246,6 @@ void exec_command(int fds[20], int ind_max, stage *s) {
 	
 	if (execvp(s->args[0], args)) {
 		perror(s->args[0]);
-		exit(40);
 		exit(EXIT_FAILURE);
 	}
 }
