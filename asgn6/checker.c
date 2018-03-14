@@ -1,3 +1,18 @@
+/*=============================================================================
+ *   Assignment:  mush
+ *
+ *       Author:  Caitlin Settles and Donald Loveland
+ *        Class:  CSC 357 Section 01
+ *     Due Date:  03/14/18
+ *
+ *-----------------------------------------------------------------------------
+ *
+ *  Description: Describes a list of "stages", which describe a command,
+ *		 its arguments, input, and output. For internal use when
+ *		 parsing user input in mush.
+ *
+ *===========================================================================*/
+
 #include "checker.h"
 
 /**

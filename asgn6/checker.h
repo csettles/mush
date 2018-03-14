@@ -1,3 +1,11 @@
+/**
+ parseline.h
+ asgn6
+ 
+ Created by Caitlin Settles on 3/3/18.
+ Copyright © 2018 Caitlin Settles. All rights reserved.
+ **/
+
 #ifndef CHECKER_H
 #define CHECKER_H
 

@@ -1,5 +1,5 @@
 /*=============================================================================
- *   Assignment:  Assignment 6: mush
+ *   Assignment:  mush
  *
  *       Author:  Caitlin Settles and Donald Loveland
  *        Class:  CSC 357 Section 01
@@ -214,6 +214,15 @@ stage *get_stages(char *line) {
 	return build_stages(stages, stage_len);;
 }
 
+/**
+ Executes a command once already in a child process.
+ Checks the input and output of the stage and dups() appropriately,
+ closes all other file descriptors, and then exec()s its command.
+
+ @param fds pipe file descriptors
+ @param ind_max the maximum index of a stage
+ @param s a stage pointer
+ */
 void exec_command(int fds[20], int ind_max, stage *s) {
 	char **args;
 	int i, tmp_in, tmp_out;
