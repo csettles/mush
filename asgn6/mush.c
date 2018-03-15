@@ -241,8 +241,8 @@ void exec_command(int fds[20], int ind_max, stage *s) {
 			dup2(fds[s->num * 2 - 2], STDIN_FILENO);
 			if (strcmp(s->output, "original stdout") != 0) {
 				if ((tmp_out = open(s->output,
-						    O_WRONLY | O_CREAT | O_TRUNC,
-						    0666)) < 0) {
+					       O_WRONLY | O_CREAT | O_TRUNC,
+					       0666)) < 0) {
 					perror(s->output);
 					exit(EXIT_FAILURE);
 				}
